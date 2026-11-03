@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { background: #FFFFFF; color: #0A0A0A; }
+body { font-family: "Be Vietnam Pro", system-ui, sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
+h1, h2 { text-wrap: balance; }
+:focus-visible { outline: 2px solid #0A0A0A; outline-offset: 2px; }
+.font-mono { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
