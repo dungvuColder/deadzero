@@ -11,10 +11,22 @@ export default function Settings() {
   const [hours, setHours] = useState(data.me.hours);
   const total = hours.reduce((a, b) => a + b, 0);
   const changed = hours.some((h, i) => h !== data.me.hours[i]);
+  const [name, setName] = useState(data.me.name);
 
   return (
     <>
       <PageHeader eyebrow={repo.mode === 'demo' ? 'Bản demo' : data.me.name} title="Cài đặt" />
+
+      {repo.mode === 'cloud' && (
+        <section className="flex flex-col gap-3 max-w-xl">
+          <h2 className="text-[15px] font-semibold">Tên hiển thị</h2>
+          <form onSubmit={e => { e.preventDefault(); if (name.trim()) run(r => r.setName(name.trim()), 'Đã đổi tên'); }} className="flex gap-2">
+            <input value={name} onChange={e => setName(e.target.value)} aria-label="Tên hiển thị" className="h-11 px-3 rounded-xl border border-line flex-1 outline-none focus:border-ink" />
+            <Button variant="primary" disabled={!name.trim() || name.trim() === data.me.name}>Lưu</Button>
+          </form>
+          <p className="text-[13px] text-muted">Bạn cùng nhóm và cùng lớp sẽ thấy tên này.</p>
+        </section>
+      )}
 
       <section className="flex flex-col gap-4 max-w-xl">
         <div className="flex justify-between items-baseline"><h2 className="text-[15px] font-semibold">Giờ tự học mỗi ngày</h2><span className="font-mono text-sm text-sub">{total} giờ/tuần</span></div>

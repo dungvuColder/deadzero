@@ -33,6 +33,7 @@ export function createLocalRepo(): Repo {
     mode: 'demo',
     async load() { return structuredClone(D()) as AppData; },
     async setHours(hours) { D().me.hours = hours; save(); },
+    async setName(name) { D().me.name = name; save(); },
     async addTask(t) {
       const x = newTask({ ...t, src: t.classId ? 'class' : 'personal', subtasks: t.subtasks ?? [] });
       D().tasks.push(x); save(); return x.id;

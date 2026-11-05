@@ -97,7 +97,8 @@ Không có file `.env` → app chạy **chế độ demo**: dữ liệu mẫu l�
 1. Tạo project tại [supabase.com](https://supabase.com) (region Singapore).
 2. **SQL Editor → New query** → dán toàn bộ [`supabase/schema.sql`](supabase/schema.sql) → **Run**.
 3. **Authentication → URL Configuration**: Site URL = link web; thêm `https://<link-web>/**` và `http://localhost:5173/**` vào Redirect URLs.
-4. **Settings → API Keys**: copy Project URL và Publishable key.
+4. **Authentication → Emails**: ở 2 mẫu *Confirm signup* và *Magic Link*, thêm dòng `<p>Mã đăng nhập: <b>{{ .Token }}</b></p>` để người dùng nhập được mã 6 số (mail trường hay tự quét link làm link hết hạn).
+5. **Settings → API Keys**: copy Project URL và Publishable key.
 
 ### 2. Biến môi trường
 

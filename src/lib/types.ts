@@ -103,6 +103,7 @@ export interface Repo {
   mode: 'demo' | 'cloud';
   load(): Promise<AppData>;
   setHours(hours: number[]): Promise<void>;
+  setName(name: string): Promise<void>;
   addTask(t: { title: string; classId: string | null; dueAt: string; est: number; subtasks?: Subtask[] }): Promise<string>;
   updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'dueAt' | 'est' | 'progress' | 'status' | 'subtasks' | 'doneAt'>>, logAction?: string): Promise<void>;
   deleteTask(id: string): Promise<void>;
