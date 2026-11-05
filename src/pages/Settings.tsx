@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import { useStore } from '../data/store';
+import { downloadIcs } from '../lib/exporters';
 import { WD } from '../lib/date';
 import { Button, PageHeader } from '../components/ui';
 
 export default function Settings() {
-  const { data, run, repo, signOut } = useStore();
+  const { data, run, repo, signOut, toast } = useStore();
   const [hours, setHours] = useState(data.me.hours);
   const total = hours.reduce((a, b) => a + b, 0);
   const changed = hours.some((h, i) => h !== data.me.hours[i]);
@@ -41,7 +44,16 @@ export default function Settings() {
         </div>
       </section>
 
+      <section className="flex flex-col gap-3 max-w-xl">
+        <h2 className="text-[15px] font-semibold">Đồng bộ</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => { downloadIcs(data); toast('Đã tải deadzero.ics'); }}><Download size={16} />Xuất sang Google Calendar</Button>
+          <span className="text-[13px] text-muted">Google Calendar › Cài đặt › Nhập › chọn file .ics</span>
+        </div>
+      </section>
+
       <section className="flex flex-wrap gap-2">
+        <Link to="/welcome"><Button variant="ghost">Trang giới thiệu</Button></Link>
         {repo.reset && <Button onClick={() => run(r => r.reset!(), 'Đã khôi phục dữ liệu mẫu')}>Khôi phục dữ liệu mẫu</Button>}
         <Button variant="ghost" onClick={signOut}>{repo.mode === 'demo' ? 'Thoát bản demo' : 'Đăng xuất'}</Button>
       </section>

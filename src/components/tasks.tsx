@@ -3,7 +3,8 @@ import { Check, Trash2 } from 'lucide-react';
 import type { Task } from '../lib/types';
 import { useStore } from '../data/store';
 import { analyse, remaining, round1, LEVEL_LABEL, type Analysis } from '../lib/priority';
-import { addDays, diffDays, dueLabel, fD, fT, iso, today0 } from '../lib/date';
+import { addDays, diffDays, dueLabel, fD, fT, iso, pad, today0 } from '../lib/date';
+import { fmtH } from '../lib/planner';
 import { AvatarStack, Button, Field, Input, LevelDot, Modal, Select, cx } from './ui';
 
 export function startText(s: Date) {
@@ -22,7 +23,7 @@ export function useToggleTask() {
   };
 }
 
-export function TaskRow({ t, a, onOpen, showStart, hideClass }: { t: Task; a?: Analysis; onOpen: (t: Task) => void; showStart?: boolean; hideClass?: boolean }) {
+export function TaskRow({ t, a, onOpen, showStart, hideClass, planned }: { t: Task; a?: Analysis; onOpen: (t: Task) => void; showStart?: boolean; hideClass?: boolean; planned?: number }) {
   const { data } = useStore();
   const toggle = useToggleTask();
   const cls = hideClass ? undefined : data.classes.find(c => c.id === t.classId);
@@ -44,6 +45,7 @@ export function TaskRow({ t, a, onOpen, showStart, hideClass }: { t: Task; a?: A
         ) : null}
       </button>
       {group && <AvatarStack people={t.assignees.map(id => ({ id, name: data.people[id] || '?' }))} meId={data.me.id} size={22} />}
+      {planned !== undefined && !done && <span title="Số giờ nên làm hôm nay" className="font-mono text-xs rounded-md bg-soft px-1.5 py-0.5 shrink-0">{fmtH(planned)}</span>}
       <span className={cx('font-mono text-[13px] shrink-0', a?.level === 'late' && !done ? 'text-urgent-ink' : 'text-muted')}>{done ? '✓' : dueLabel(t.dueAt)}</span>
       {a && !done ? <LevelDot level={a.level} r={a.r} /> : <span className="w-2" />}
     </div>
@@ -123,14 +125,47 @@ export function TaskModal({ task, onClose }: { task: Task; onClose: () => void }
   const commitProgress = (p: number) => run(r => r.updateTask(t.id, { progress: p, status: p > 0 && t.status === 'todo' ? 'doing' : t.status },
     t.groupId ? `cập nhật “${t.title}” lên ${p}%` : undefined));
 
+  const due = new Date(t.dueAt);
+  const [editing, setEditing] = useState(false);
+  const [f, setF] = useState({ title: t.title, date: iso(due), time: `${pad(due.getHours())}:${pad(due.getMinutes())}`, est: t.est });
+  const [newSub, setNewSub] = useState('');
+  const saveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const [y, m, d] = f.date.split('-').map(Number); const [h, mi] = f.time.split(':').map(Number);
+    await run(r => r.updateTask(t.id, { title: f.title.trim() || t.title, dueAt: new Date(y, m - 1, d, h, mi).toISOString(), est: Math.max(0.5, f.est) },
+      t.groupId ? `sửa “${f.title.trim() || t.title}”` : undefined), 'Đã lưu');
+    setEditing(false);
+  };
+  const addSub = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSub.trim()) return;
+    const subtasks = [...t.subtasks, { t: newSub.trim(), done: false }];
+    const p = Math.round(subtasks.filter(s => s.done).length / subtasks.length * 100);
+    setProgress(p); setNewSub('');
+    run(r => r.updateTask(t.id, { subtasks, progress: p }));
+  };
+
   return (
     <Modal title={t.title} onClose={onClose}>
       <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-sub">
-          {cls && <span>{cls.name}</span>}
-          <span>Hạn {fD(t.dueAt)} · {fT(t.dueAt)}</span>
-          <span className="font-mono">{round1(remaining(t))}/{t.est} giờ</span>
-        </div>
+        {editing ? (
+          <form onSubmit={saveEdit} className="flex flex-col gap-3">
+            <Field label="Tên việc"><Input value={f.title} onChange={e => setF({ ...f, title: e.target.value })} autoFocus /></Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Hạn"><Input type="date" value={f.date} onChange={e => setF({ ...f, date: e.target.value })} /></Field>
+              <Field label="Giờ"><Input type="time" value={f.time} onChange={e => setF({ ...f, time: e.target.value })} /></Field>
+              <Field label="Cần (giờ)"><Input type="number" min={0.5} step={0.5} value={f.est} onChange={e => setF({ ...f, est: Number(e.target.value) || 1 })} /></Field>
+            </div>
+            <div className="flex justify-end gap-2"><Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>Huỷ</Button><Button size="sm" variant="primary">Lưu</Button></div>
+          </form>
+        ) : (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-sub">
+            {cls && <span>{cls.name}</span>}
+            <span>Hạn {fD(t.dueAt)} · {fT(t.dueAt)}</span>
+            <span className="font-mono">{round1(remaining(t))}/{t.est} giờ</span>
+            <button onClick={() => setEditing(true)} className="ml-auto text-[13px] font-medium text-ink underline underline-offset-4">Sửa</button>
+          </div>
+        )}
         {a && t.status !== 'done' && (
           <div className="flex items-center gap-2 text-sm bg-soft rounded-xl px-3.5 py-3">
             <LevelDot level={a.level} r={a.r} /><span className="font-medium">{LEVEL_LABEL[a.level]}</span><span className="text-muted">· {startText(a.start)}</span>
@@ -141,16 +176,18 @@ export function TaskModal({ task, onClose }: { task: Task; onClose: () => void }
           <input type="range" min={0} max={100} step={5} value={progress} onChange={e => setProgress(Number(e.target.value))}
             onMouseUp={() => commitProgress(progress)} onTouchEnd={() => commitProgress(progress)} onKeyUp={() => commitProgress(progress)} className="accent-ink" />
         </label>
-        {t.subtasks.length > 0 && (
-          <div className="flex flex-col gap-1">
-            {t.subtasks.map((s, i) => (
-              <label key={i} className="flex items-center gap-3 min-h-[36px] text-sm">
-                <input type="checkbox" checked={s.done} onChange={e => setSub(i, e.target.checked)} className="w-4 h-4 accent-ink" />
-                <span className={cx(s.done && 'line-through text-muted')}>{s.t}</span>
-              </label>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-col gap-1">
+          {t.subtasks.map((s, i) => (
+            <label key={i} className="flex items-center gap-3 min-h-[36px] text-sm">
+              <input type="checkbox" checked={s.done} onChange={e => setSub(i, e.target.checked)} className="w-4 h-4 accent-ink" />
+              <span className={cx(s.done && 'line-through text-muted')}>{s.t}</span>
+            </label>
+          ))}
+          <form onSubmit={addSub} className="flex gap-2 mt-1">
+            <Input value={newSub} onChange={e => setNewSub(e.target.value)} placeholder="Thêm bước nhỏ…" aria-label="Thêm bước nhỏ" className="h-9 flex-1" />
+            <Button size="sm" disabled={!newSub.trim()}>Thêm</Button>
+          </form>
+        </div>
         <div className="flex justify-between gap-2">
           {t.createdBy === data.me.id && !t.groupId ? (
             <Button variant="ghost" onClick={async () => { await run(r => r.deleteTask(t.id), 'Đã xoá'); onClose(); }} aria-label="Xoá"><Trash2 size={16} />Xoá</Button>

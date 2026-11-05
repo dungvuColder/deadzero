@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Plus } from 'lucide-react';
+import { ArrowLeft, Copy, Download, Plus } from 'lucide-react';
+import { downloadContributionCsv } from '../lib/exporters';
 import type { Task } from '../lib/types';
 import { useStore } from '../data/store';
 import { remaining, round1 } from '../lib/priority';
@@ -174,7 +175,13 @@ function Contribution({ groupId }: { groupId: string }) {
             </tr>))}</tbody>
         </table>
       </div>
-      <p className="text-xs text-muted">Số liệu lấy từ nhật ký nhóm, không ai sửa được. Dùng kèm phiếu đánh giá chéo.</p>
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <p className="text-xs text-muted">Số liệu lấy từ nhật ký nhóm, không ai sửa được. Dùng kèm phiếu đánh giá chéo.</p>
+        <Button size="sm" onClick={() => downloadContributionCsv(g.name, rows.map(r => ({
+          name: r.m.id === data.me.id ? data.me.name : r.m.name, leader: r.m.id === g.leaderId, n: r.n, d: r.d, hours: r.hours,
+          share: Math.round(r.hours / total * 100), rate: r.rate, left: r.left,
+        })))}><Download size={14} />Tải Excel (CSV)</Button>
+      </div>
     </section>
   );
 }

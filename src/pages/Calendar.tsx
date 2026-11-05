@@ -1,15 +1,18 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { useStore } from '../data/store';
-import { WD, addDays, diffDays, dow, fShort, mondayOf, pad, periodEnd, periodStart, today0, weekNo } from '../lib/date';
+import { WD, addDays, diffDays, dow, fShort, iso, mondayOf, pad, periodEnd, periodStart, today0, weekNo } from '../lib/date';
+import { buildPlan, fmtH } from '../lib/planner';
+import { downloadIcs } from '../lib/exporters';
 import { Button, PageHeader, cx } from '../components/ui';
 
 const H0 = 7, H1 = 21, PX = 44;
 export const CLASS_COLORS = ['#0A0A0A', '#2563EB', '#C2410C', '#7C3AED', '#0F766E', '#BE185D', '#0E7490'];
 
 export default function Calendar() {
-  const { data } = useStore();
+  const { data, toast } = useStore();
   const [w, setW] = useState(0);
+  const plan = useMemo(() => buildPlan(data, 42), [data]);
   const t0 = today0();
   const start = addDays(mondayOf(t0), w * 7);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
@@ -23,6 +26,7 @@ export default function Calendar() {
         <Button aria-label="Tuần trước" onClick={() => setW(w - 1)}><ChevronLeft size={16} /></Button>
         <Button onClick={() => setW(0)}>Tuần này</Button>
         <Button aria-label="Tuần sau" onClick={() => setW(w + 1)}><ChevronRight size={16} /></Button>
+        <Button onClick={() => { downloadIcs(data); toast('Đã tải deadzero.ics, mở bằng Google Calendar để nhập'); }}><Download size={16} />Xuất lịch</Button>
       </PageHeader>
 
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
@@ -44,6 +48,19 @@ export default function Calendar() {
                 {exams.map(c => <span key={c.id} className="text-[11px] font-semibold rounded-md px-1.5 py-0.5 bg-urgent text-white truncate">Thi {c.name}</span>)}
                 {due.map(t => <span key={t.id} title={t.title} className="text-[11px] font-medium rounded-md px-1.5 py-0.5 bg-soft truncate">{t.title}</span>)}
                 {goals.map(i => <span key={i.id} title={i.title} className={cx('text-[11px] rounded-md px-1.5 py-0.5 border border-dashed border-[#D4D4D8] truncate', i.done && 'line-through text-muted')}>{i.title}</span>)}
+              </div>
+            );
+          })}
+
+          <div className="text-[11px] text-muted pt-2 pr-2 text-right border-t border-line">Nên làm</div>
+          {days.map(d => {
+            const slots = plan.days.get(iso(d)) ?? [];
+            return (
+              <div key={d.toISOString()} className="border-t border-l border-line p-1.5 flex flex-col gap-1 min-h-[44px]">
+                {slots.map(s => {
+                  const t = data.tasks.find(x => x.id === s.taskId);
+                  return t ? <span key={s.taskId} title={`${t.title} · ${fmtH(s.h)}`} className="flex justify-between gap-1 text-[11px] rounded-md px-1.5 py-0.5 border border-ink/80"><span className="truncate">{t.title}</span><b className="font-mono font-medium shrink-0">{fmtH(s.h)}</b></span> : null;
+                })}
               </div>
             );
           })}
