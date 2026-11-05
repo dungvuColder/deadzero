@@ -355,3 +355,13 @@ begin
     end;
   end loop;
 end $$;
+
+-- ===== Quyền gọi hàm: chỉ người đã đăng nhập; hàm trigger không gọi trực tiếp qua API =====
+revoke execute on function public.add_class_task(uuid, text, timestamptz, numeric), public.can_see_task(uuid), public.find_class_by_sec(text),
+  public.handle_new_user(), public.is_class_member(uuid), public.is_group_member(uuid), public.join_class(text), public.join_group(text),
+  public.my_state(), public.notify_assigned(), public.notify_review(), public.notify_session_change(), public.preview_class(text)
+  from public, anon, authenticated;
+grant execute on function public.add_class_task(uuid, text, timestamptz, numeric), public.can_see_task(uuid), public.find_class_by_sec(text),
+  public.is_class_member(uuid), public.is_group_member(uuid), public.join_class(text), public.join_group(text),
+  public.my_state(), public.preview_class(text)
+  to authenticated;
