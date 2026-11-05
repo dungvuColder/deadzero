@@ -36,6 +36,9 @@ DeadZero gom tất cả vào một nơi, dùng chung một dòng thời gian, v�
 | **Dán thời khoá biểu** | Copy bảng TKB trên cổng đào tạo, dán vào là tạo xong các lớp |
 | **Làm việc nhóm** | Kanban 4 cột có bước duyệt, giao việc, nhật ký không sửa được, bảng đóng góp từng người (xuất Excel) |
 | **Lộ trình tự học** | Mẫu IELTS, Python, ôn thi cuối kỳ; tự chia thành buổi nhỏ, streak, dời buổi bị lỡ |
+| **AI** | Dán đề bài → tự chia thành các bước kèm số giờ; tạo lộ trình tự học theo mục tiêu riêng |
+| **Thống kê** | Giờ hoàn thành theo tuần, tỷ lệ đúng hạn theo tháng, theo môn |
+| **Nhắc qua email** | Tóm tắt deadline gấp lúc 06:30 mỗi sáng |
 | **Đồng bộ** | Xuất lịch sang Google Calendar (.ics), cài như app trên điện thoại (PWA), realtime giữa các thành viên |
 
 <table>
@@ -100,6 +103,22 @@ Không có file `.env` → app chạy **chế độ demo**: dữ liệu mẫu l�
 4. **Authentication → Emails**: ở 2 mẫu *Confirm signup* và *Magic Link*, thêm dòng `<p>Mã đăng nhập: <b>{{ .Token }}</b></p>` để người dùng nhập được mã 6 số (mail trường hay tự quét link làm link hết hạn).
 5. **Settings → API Keys**: copy Project URL và Publishable key.
 
+### 1b. AI chia nhỏ bài tập (tuỳ chọn)
+
+1. Lấy API key miễn phí tại [Google AI Studio](https://aistudio.google.com/apikey).
+2. Supabase → **Edge Functions → Secrets**: thêm `GEMINI_API_KEY` = key vừa lấy (tuỳ chọn `GEMINI_MODEL`, mặc định `gemini-3.5-flash-lite`).
+3. Deploy hàm: `supabase functions deploy ai-breakdown` (mã nguồn trong `supabase/functions/ai-breakdown`).
+
+### 1c. Nhắc deadline qua email (tuỳ chọn)
+
+1. Tạo tài khoản [Brevo](https://www.brevo.com) (miễn phí 300 email/ngày), xác minh một địa chỉ gửi tại **Senders**, tạo API key tại **SMTP & API**.
+2. Supabase → **SQL Editor**, chạy (thay giá trị của bạn):
+   ```sql
+   select vault.create_secret('xkeysib-...', 'brevo_api_key');
+   select vault.create_secret('email-da-xac-minh@gmail.com', 'digest_sender');
+   ```
+3. Chạy [`supabase/email_digest.sql`](supabase/email_digest.sql). Mỗi sáng 06:30 hệ thống gửi tóm tắt cho người có việc gấp. Trong app: **Cài đặt → Gửi thử cho tôi**.
+
 ### 2. Biến môi trường
 
 Tạo file `.env` (xem `.env.example`):
@@ -161,7 +180,10 @@ supabase/schema.sql     bảng, phân quyền, hàm RPC, trigger, realtime
 - [x] Xếp ưu tiên, ngày nên bắt đầu, tải công việc, gợi ý lịch làm
 - [x] Workspace nhóm: Kanban, duyệt việc, nhật ký, bảng đóng góp
 - [x] Lộ trình tự học, xuất Google Calendar, PWA
-- [ ] Thông báo đẩy và email nhắc deadline
+- [x] AI chia nhỏ bài tập và tạo lộ trình tự học (Gemini)
+- [x] Email tóm tắt deadline mỗi sáng (Brevo)
+- [x] Thống kê học tập
+- [ ] Thông báo đẩy trên điện thoại
 - [ ] Bình luận, @nhắc tên, đính kèm file trong việc nhóm
 - [ ] Sửa, xoá lớp; quản lý thành viên nhóm
 - [ ] Thông báo qua Zalo OA

@@ -25,7 +25,7 @@ function mapState(s: any, uid: string): AppData {
   const people: Record<string, string> = { ...(s.people ?? {}) };
   people[uid] = 'Bạn';
   return {
-    me: { id: uid, name: me.full_name, hours: (me.hours ?? []).map(Number), semesterStart: me.semester_start, semesterWeeks: me.semester_weeks },
+    me: { id: uid, name: me.full_name, hours: (me.hours ?? []).map(Number), semesterStart: me.semester_start, semesterWeeks: me.semester_weeks, emailDigest: me.email_digest ?? true },
     people,
     classes,
     tasks,
@@ -47,6 +47,8 @@ export function createSupabaseRepo(uid: string): Repo {
     async load() { return mapState(must(await sb.rpc('my_state')), uid); },
     async setHours(hours) { must(await sb.from('profiles').update({ hours }).eq('id', uid)); },
     async setName(name) { must(await sb.from('profiles').update({ full_name: name }).eq('id', uid)); },
+    async setEmailDigest(on) { must(await sb.from('profiles').update({ email_digest: on }).eq('id', uid)); },
+    async sendTestDigest() { return must(await sb.rpc('send_test_digest')) as string; },
     async addTask(t) {
       const row = must(await sb.from('tasks').insert({ title: t.title, class_id: t.classId, due_at: t.dueAt, est: t.est, src: t.classId ? 'class' : 'personal', subtasks: t.subtasks ?? [] }).select('id').single()) as any;
       must(await sb.from('task_assignees').insert({ task_id: row.id, user_id: uid }));

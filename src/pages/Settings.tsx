@@ -57,6 +57,19 @@ export default function Settings() {
       </section>
 
       <section className="flex flex-col gap-3 max-w-xl">
+        <h2 className="text-[15px] font-semibold">Nhắc deadline qua email</h2>
+        <label className="flex items-center justify-between gap-4 rounded-2xl bg-soft px-4 py-3.5 cursor-pointer">
+          <span className="flex flex-col"><span className="font-medium">Tóm tắt buổi sáng</span><span className="text-[13px] text-muted">06:30 mỗi ngày, khi có việc quá hạn hoặc hết hạn trong 3 ngày tới</span></span>
+          <input type="checkbox" className="w-5 h-5 accent-ink" checked={data.me.emailDigest ?? true} disabled={repo.mode === 'demo'}
+            onChange={e => run(r => r.setEmailDigest(e.target.checked), e.target.checked ? 'Đã bật nhắc qua email' : 'Đã tắt nhắc qua email')} />
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="sm" onClick={() => run(r => r.sendTestDigest()).then(em => { if (em) toast(`Đã gửi thử tới ${em}`); })}>Gửi thử cho tôi</Button>
+          {repo.mode === 'demo' && <span className="text-[13px] text-muted">Cần đăng nhập để nhận email.</span>}
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3 max-w-xl">
         <h2 className="text-[15px] font-semibold">Đồng bộ</h2>
         <div className="flex flex-wrap items-center gap-3">
           <Button onClick={() => { downloadIcs(data); toast('Đã tải deadzero.ics'); }}><Download size={16} />Xuất sang Google Calendar</Button>

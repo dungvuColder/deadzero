@@ -5,6 +5,7 @@ import { useStore } from '../data/store';
 import { analyse, remaining, round1, LEVEL_LABEL, type Analysis } from '../lib/priority';
 import { addDays, diffDays, dueLabel, fD, fT, iso, pad, today0 } from '../lib/date';
 import { fmtH } from '../lib/planner';
+import { AiBreakdownPanel, stepsToSubtasks } from './ai';
 import { AvatarStack, Button, Field, Input, LevelDot, Modal, Select, cx } from './ui';
 
 export function startText(s: Date) {
@@ -63,6 +64,7 @@ export function AddTaskModal({ onClose, classId }: { onClose: () => void; classI
   const [time, setTime] = useState('23:59');
   const [est, setEst] = useState(2);
   const [shareToClass, setShareToClass] = useState(false);
+  const [aiSubs, setAiSubs] = useState<{ t: string; done: boolean }[]>([]);
   const target = data.classes.find(c => c.id === cls);
   const canShare = target && target.shared && target.ownerId === data.me.id;
 
@@ -76,7 +78,7 @@ export function AddTaskModal({ onClose, classId }: { onClose: () => void; classI
     e.preventDefault();
     if (!title.trim()) return;
     if (canShare && shareToClass) await run(r => r.addClassTask(cls, { title: title.trim(), dueAt, est }), `Đã giao cho ${target!.members} bạn trong lớp`);
-    else await run(r => r.addTask({ title: title.trim(), classId: cls || null, dueAt, est }), 'Đã thêm');
+    else await run(r => r.addTask({ title: title.trim(), classId: cls || null, dueAt, est, subtasks: aiSubs }), 'Đã thêm');
     onClose();
   }
   void repo;
@@ -84,6 +86,8 @@ export function AddTaskModal({ onClose, classId }: { onClose: () => void; classI
     <Modal title="Thêm việc" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-4">
         <Field label="Tên việc"><Input autoFocus value={title} onChange={e => setTitle(e.target.value)} placeholder="Ví dụ: Bài tập lớn Web – sprint 3" required /></Field>
+        <AiBreakdownPanel title={title} course={target?.name} due={date} onApply={(steps, total) => { setAiSubs(stepsToSubtasks(steps)); setEst(total); }} />
+        {aiSubs.length > 0 && <p className="text-[13px] text-sub -mt-2">Đã thêm {aiSubs.length} bước nhỏ · ước lượng {fmtH(est)}</p>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Môn"><Select value={cls} onChange={e => setCls(e.target.value)}><option value="">Việc riêng</option>{data.classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</Select></Field>
           <Field label="Loại"><Select value={kind} onChange={e => { setKind(e.target.value); setEst(EST[e.target.value]); }}>{Object.keys(EST).map(k => <option key={k}>{k}</option>)}</Select></Field>
@@ -176,6 +180,14 @@ export function TaskModal({ task, onClose }: { task: Task; onClose: () => void }
           <input type="range" min={0} max={100} step={5} value={progress} onChange={e => setProgress(Number(e.target.value))}
             onMouseUp={() => commitProgress(progress)} onTouchEnd={() => commitProgress(progress)} onKeyUp={() => commitProgress(progress)} className="accent-ink" />
         </label>
+        {t.status !== 'done' && (
+          <AiBreakdownPanel title={t.title} course={cls?.name} due={t.dueAt.slice(0, 10)} onApply={(steps, total) => {
+            const subtasks = [...t.subtasks, ...stepsToSubtasks(steps)];
+            const p = Math.round(subtasks.filter(x => x.done).length / subtasks.length * 100);
+            setProgress(p);
+            run(r => r.updateTask(t.id, { subtasks, progress: p, est: total }), `Đã thêm ${steps.length} bước`);
+          }} />
+        )}
         <div className="flex flex-col gap-1">
           {t.subtasks.map((s, i) => (
             <label key={i} className="flex items-center gap-3 min-h-[36px] text-sm">

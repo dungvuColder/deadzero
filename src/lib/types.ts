@@ -11,6 +11,8 @@ export interface Profile {
   hours: number[];
   semesterStart: string; // yyyy-mm-dd, thứ Hai tuần 1
   semesterWeeks: number;
+  /** Nhận email tóm tắt deadline mỗi sáng */
+  emailDigest?: boolean;
 }
 
 export interface Session { id: string; wd: number; from: number; to: number; room: string }
@@ -104,6 +106,9 @@ export interface Repo {
   load(): Promise<AppData>;
   setHours(hours: number[]): Promise<void>;
   setName(name: string): Promise<void>;
+  setEmailDigest(on: boolean): Promise<void>;
+  /** Gửi thử email tóm tắt cho chính mình, trả về địa chỉ đã gửi */
+  sendTestDigest(): Promise<string>;
   addTask(t: { title: string; classId: string | null; dueAt: string; est: number; subtasks?: Subtask[] }): Promise<string>;
   updateTask(id: string, patch: Partial<Pick<Task, 'title' | 'dueAt' | 'est' | 'progress' | 'status' | 'subtasks' | 'doneAt'>>, logAction?: string): Promise<void>;
   deleteTask(id: string): Promise<void>;

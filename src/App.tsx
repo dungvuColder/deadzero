@@ -10,6 +10,7 @@ import { GroupDetail, GroupList } from './pages/Groups';
 import Goals from './pages/Goals';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
+import Stats from './pages/Stats';
 import Login from './pages/Login';
 import Welcome, { WELCOMED_KEY } from './pages/Welcome';
 
@@ -28,6 +29,7 @@ function MainApp() {
           <Route path="tasks" element={<Tasks />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="load" element={<Load />} />
+          <Route path="stats" element={<Stats />} />
           <Route path="classes" element={<ClassList />} />
           <Route path="classes/:id" element={<ClassDetail />} />
           <Route path="import" element={<ImportTkb />} />

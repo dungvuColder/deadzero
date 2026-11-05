@@ -61,6 +61,20 @@ export function seedWorld(): DemoWorld {
     g(task('cnpm', 'Quay video demo', at(10), 3, 0, 'todo', 'group', ['u_t', 'u_k'])),
   ];
 
+  // Lịch sử đã hoàn thành 8 tuần qua, để màn Thống kê có dữ liệu
+  const HIST: [string, string, number][] = [
+    ['csdl', 'Bài tập SQL tuần', 2], ['web', 'Lab', 3], ['xstk', 'Bài tập chương', 2], ['cnpm', 'Đọc tài liệu UML', 2],
+    ['kn', 'Phỏng vấn khách hàng', 3], ['web', 'Bài tập HTML/CSS', 2], ['csdl', 'Thiết kế lược đồ', 4], ['xstk', 'Ôn tập kiểm tra', 4],
+  ];
+  for (let i = 0; i < 22; i++) {
+    const [cls, name, est] = HIST[i % HIST.length];
+    const off = -55 + i * 2.4;
+    const late = i % 6 === 4;
+    const due = at(Math.round(off), 23, 59);
+    const doneAt = at(Math.round(off) + (late ? 1 : -1), 21, 0);
+    tasks.push(task(cls, `${name} ${Math.floor(i / HIST.length) + 1}`, due, est, 100, 'done', cls === 'kn' ? 'personal' : 'class', ['me'], [], { doneAt }));
+  }
+
   const ielts = buildGoal(TEMPLATES[0], addDays(t0, -21), [1, 3, 5, 6], 30, [1]);
 
   const data: AppData = {

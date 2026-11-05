@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { Bell, BookOpen, CalendarDays, LayoutGrid, ListChecks, LogOut, Settings, Sun, TrendingUp, Users } from 'lucide-react';
+import { BarChart3, Bell, BookOpen, CalendarDays, LayoutGrid, ListChecks, LogOut, Settings, Sun, TrendingUp, Users } from 'lucide-react';
 import { useStore } from '../data/store';
 import { cx } from './ui';
 
@@ -8,6 +8,7 @@ const NAV = [
   { to: '/tasks', label: 'Nhiệm vụ', icon: ListChecks },
   { to: '/calendar', label: 'Lịch', icon: CalendarDays },
   { to: '/load', label: 'Tải công việc', icon: LayoutGrid },
+  { to: '/stats', label: 'Thống kê', icon: BarChart3 },
   { to: '/classes', label: 'Lớp học phần', icon: BookOpen },
   { to: '/groups', label: 'Nhóm', icon: Users },
   { to: '/goals', label: 'Tự học', icon: TrendingUp },

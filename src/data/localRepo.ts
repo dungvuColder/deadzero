@@ -1,7 +1,7 @@
 import type { AppData, ClassSection, Notif, Repo, Task } from '../lib/types';
 import { seedWorld, type DemoWorld } from '../lib/seed';
 
-const KEY = 'deadzero-demo-v1';
+const KEY = 'deadzero-demo-v2';
 const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const genCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 let c = 0;
@@ -34,6 +34,8 @@ export function createLocalRepo(): Repo {
     async load() { return structuredClone(D()) as AppData; },
     async setHours(hours) { D().me.hours = hours; save(); },
     async setName(name) { D().me.name = name; save(); },
+    async setEmailDigest(on) { D().me.emailDigest = on; save(); },
+    async sendTestDigest() { throw new Error('Bản demo không gửi email. Đăng nhập để dùng tính năng này.'); },
     async addTask(t) {
       const x = newTask({ ...t, src: t.classId ? 'class' : 'personal', subtasks: t.subtasks ?? [] });
       D().tasks.push(x); save(); return x.id;

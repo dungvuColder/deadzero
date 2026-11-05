@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Flame, Plus, Trash2 } from 'lucide-react';
 import { useStore } from '../data/store';
 import { TEMPLATES, buildGoal, reschedule, streak } from '../lib/templates';
+import { generateGoal } from '../lib/ai';
 import { WD, addDays, diffDays, fD, fromIsoDate, iso, today0 } from '../lib/date';
 import { Button, Field, Input, Modal, PageHeader, Progress, Select, cx } from '../components/ui';
 
@@ -19,7 +20,7 @@ export default function Goals() {
   return (
     <>
       <PageHeader eyebrow={`${data.goals.length} lộ trình`} title="Tự học">
-        <Button variant="primary" onClick={() => setCreating(TEMPLATES[0].key)}><Plus size={16} strokeWidth={2.4} />Lộ trình mới</Button>
+        <Button variant="primary" onClick={() => setCreating('ai')}><Plus size={16} strokeWidth={2.4} />Lộ trình mới</Button>
       </PageHeader>
 
       {data.goals.map(g => {
@@ -96,17 +97,45 @@ function NewGoal({ initial, onClose, onCreated }: { initial: string; onClose: ()
   const [days, setDays] = useState([0, 2, 4]);
   const [start, setStart] = useState(iso(addDays(today0(), 1)));
   const [minutes, setMinutes] = useState(45);
-  const t = TEMPLATES.find(x => x.key === key)!;
+  const { repo, toast } = useStore();
+  const isAi = key === 'ai';
+  const [goal, setGoal] = useState('');
+  const [level, setLevel] = useState('');
+  const [weeks, setWeeks] = useState(8);
+  const [busy, setBusy] = useState(false);
+  const t = TEMPLATES.find(x => x.key === key);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!days.length) return;
-    const id = await run(r => r.createGoal(buildGoal(t, fromIsoDate(start), [...days].sort(), minutes)), 'Đã tạo lộ trình');
+    if (!days.length || busy) return;
+    let tpl = t;
+    if (isAi) {
+      if (!goal.trim()) return;
+      setBusy(true);
+      try { tpl = await generateGoal({ goal: goal.trim(), level: level.trim(), weeks, sessionsPerWeek: days.length }, repo.mode === 'cloud'); }
+      catch (err) { toast((err as Error).message); setBusy(false); return; }
+      setBusy(false);
+    }
+    const id = await run(r => r.createGoal(buildGoal(tpl!, fromIsoDate(start), [...days].sort(), minutes)), 'Đã tạo lộ trình');
     if (id) { onCreated(id); onClose(); }
   };
   return (
     <Modal title="Lộ trình mới" onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-4">
-        <Field label="Mẫu" hint={t.desc}><Select value={key} onChange={e => setKey(e.target.value)}>{TEMPLATES.map(x => <option key={x.key} value={x.key}>{x.name}</option>)}</Select></Field>
+        <Field label="Mẫu" hint={isAi ? 'AI tạo lộ trình theo mục tiêu và trình độ của bạn' : t?.desc}>
+          <Select value={key} onChange={e => setKey(e.target.value)}>
+            <option value="ai">Tạo bằng AI theo mục tiêu của tôi</option>
+            {TEMPLATES.map(x => <option key={x.key} value={x.key}>{x.name}</option>)}
+          </Select>
+        </Field>
+        {isAi && (
+          <>
+            <Field label="Mục tiêu"><Input required value={goal} onChange={e => setGoal(e.target.value)} placeholder="Ví dụ: Thi TOEIC 750 trước tháng 3" /></Field>
+            <div className="grid grid-cols-[1fr_110px] gap-3">
+              <Field label="Trình độ hiện tại"><Input value={level} onChange={e => setLevel(e.target.value)} placeholder="Ví dụ: đang 550 điểm" /></Field>
+              <Field label="Số tuần"><Input type="number" min={1} max={24} value={weeks} onChange={e => setWeeks(Math.min(24, Math.max(1, Number(e.target.value) || 8)))} /></Field>
+            </div>
+          </>
+        )}
         <div className="flex flex-col gap-2 text-[13px] font-medium">
           <span>Học vào</span>
           <div className="flex gap-1.5">
@@ -121,7 +150,7 @@ function NewGoal({ initial, onClose, onCreated }: { initial: string; onClose: ()
           <Field label="Bắt đầu"><Input type="date" value={start} onChange={e => setStart(e.target.value)} /></Field>
           <Field label="Phút mỗi buổi"><Input type="number" min={15} step={15} value={minutes} onChange={e => setMinutes(Number(e.target.value) || 30)} /></Field>
         </div>
-        <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Huỷ</Button><Button variant="primary" disabled={!days.length}>Tạo</Button></div>
+        <div className="flex justify-end gap-2"><Button type="button" variant="ghost" onClick={onClose}>Huỷ</Button><Button variant="primary" disabled={!days.length || busy}>{busy ? 'AI đang tạo…' : 'Tạo'}</Button></div>
       </form>
     </Modal>
   );
