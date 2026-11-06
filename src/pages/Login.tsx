@@ -10,6 +10,7 @@ export default function Login({ onDemo }: { onDemo: () => void }) {
   const [code, setCode] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [busy, setBusy] = useState(false);
+  const [showCode, setShowCode] = useState(false);
   const [err, setErr] = useState('');
   const redirect = window.location.origin + window.location.pathname;
 
@@ -60,13 +61,20 @@ export default function Login({ onDemo }: { onDemo: () => void }) {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-sub">Đã gửi email tới <b className="text-ink">{email}</b>. Nhập mã 6 số trong email, hoặc bấm vào link trong email.</p>
-            <form onSubmit={verify} className="flex flex-col gap-3">
-              <Input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} autoFocus aria-label="Mã 6 số"
-                onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="••••••"
-                className="h-14 text-center font-mono text-2xl tracking-[0.4em]" />
-              <Button variant="primary" disabled={busy || code.length < 6}>{busy ? 'Đang kiểm tra…' : 'Đăng nhập'}</Button>
-            </form>
+            <div className="rounded-2xl bg-soft p-5 flex flex-col gap-2 text-sm">
+              <span>Đã gửi email tới <b>{email}</b>.</span>
+              <span className="text-sub">Mở email và bấm vào link <b className="text-ink">Confirm email address</b> (hoặc <b className="text-ink">Log In</b>). Không thấy thì xem thư mục Spam.</span>
+            </div>
+            {showCode ? (
+              <form onSubmit={verify} className="flex flex-col gap-3">
+                <Input inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} autoFocus aria-label="Mã 6 số"
+                  onChange={e => setCode(e.target.value.replace(/\D/g, ''))} placeholder="••••••"
+                  className="h-14 text-center font-mono text-2xl tracking-[0.4em]" />
+                <Button variant="primary" disabled={busy || code.length < 6}>{busy ? 'Đang kiểm tra…' : 'Đăng nhập'}</Button>
+              </form>
+            ) : (
+              <button onClick={() => setShowCode(true)} className="self-start text-[13px] text-muted hover:text-ink underline underline-offset-4">Email có mã 6 số? Nhập mã</button>
+            )}
             <div className="flex gap-4 text-sm">
               <button onClick={() => send()} disabled={busy} className="text-muted hover:text-ink underline underline-offset-4">Gửi lại</button>
               <button onClick={() => { setStep('email'); setCode(''); setErr(''); }} className="text-muted hover:text-ink underline underline-offset-4">Đổi email</button>
