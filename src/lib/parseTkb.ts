@@ -1,3 +1,4 @@
+import * as XLSX from 'xlsx';
 import type { ParsedRow } from './types';
 
 export const SAMPLE_TKB = [
@@ -30,4 +31,20 @@ export function parseTkb(text: string): ParsedRow[] {
       };
     })
     .filter(r => r.sec);
+}
+
+/**
+ * Đọc file Excel TKB (.xlsx, .xls, .csv) và chuyển đổi sang danh sách ParsedRow
+ */
+export function parseExcelTkb(fileBuffer: ArrayBuffer): ParsedRow[] {
+  const workbook = XLSX.read(fileBuffer, { type: 'array' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const rawRows = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1 });
+
+  const textLines = rawRows
+    .map(row => (Array.isArray(row) ? row.join('\t') : ''))
+    .filter(Boolean);
+
+  return parseTkb(textLines.join('\n'));
 }

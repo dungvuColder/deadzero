@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react';
 import { useStore } from '../data/store';
 import { WD, addDays, diffDays, dow, fShort, iso, mondayOf, pad, periodEnd, periodStart, today0, weekNo } from '../lib/date';
 import { buildPlan, fmtH } from '../lib/planner';
 import { downloadIcs } from '../lib/exporters';
 import { Button, PageHeader, cx } from '../components/ui';
+import ImportTKBModal from '../components/ImportTKBModal';
+import type { ParsedRow } from '../lib/types';
 
 const H0 = 7, H1 = 21, PX = 44;
 export const CLASS_COLORS = ['#0A0A0A', '#2563EB', '#C2410C', '#7C3AED', '#0F766E', '#BE185D', '#0E7490'];
@@ -12,6 +14,8 @@ export const CLASS_COLORS = ['#0A0A0A', '#2563EB', '#C2410C', '#7C3AED', '#0F766
 export default function Calendar() {
   const { data, toast } = useStore();
   const [w, setW] = useState(0);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const plan = useMemo(() => buildPlan(data, 42), [data]);
   const t0 = today0();
   const start = addDays(mondayOf(t0), w * 7);
@@ -20,13 +24,26 @@ export default function Calendar() {
   const nowH = now.getHours() + now.getMinutes() / 60;
   const inSemester = (d: Date) => { const n = weekNo(d, data.me.semesterStart); return n >= 1 && n <= data.me.semesterWeeks; };
 
+  const handleImportTkb = (rows: ParsedRow[]) => {
+    console.log("Dữ liệu TKB đã nhận diện:", rows);
+    alert(`Đã nhận diện thành công ${rows.length} lớp học phần!`);
+  };
+
   return (
     <>
       <PageHeader eyebrow={`Tuần ${weekNo(start, data.me.semesterStart)} · ${fShort(days[0])} – ${fShort(days[6])}`} title="Lịch">
         <Button aria-label="Tuần trước" onClick={() => setW(w - 1)}><ChevronLeft size={16} /></Button>
         <Button onClick={() => setW(0)}>Tuần này</Button>
         <Button aria-label="Tuần sau" onClick={() => setW(w + 1)}><ChevronRight size={16} /></Button>
-        <Button onClick={() => { downloadIcs(data); toast('Đã tải deadzero.ics, mở bằng Google Calendar để nhập'); }}><Download size={16} />Xuất lịch</Button>
+        
+        {/* Nút Nhập TKB gắn Modal */}
+        <Button onClick={() => setIsImportModalOpen(true)}>
+          <Upload size={16} /> Nhập TKB
+        </Button>
+
+        <Button onClick={() => { downloadIcs(data); toast('Đã tải deadzero.ics, mở bằng Google Calendar để nhập'); }}>
+          <Download size={16} /> Xuất lịch
+        </Button>
       </PageHeader>
 
       <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
@@ -86,6 +103,13 @@ export default function Calendar() {
           })}
         </div>
       </div>
+
+      {/* Modal Nhập Thời khóa biểu */}
+      <ImportTKBModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={handleImportTkb}
+      />
     </>
   );
 }
