@@ -130,3 +130,28 @@ export interface Repo {
   subscribe(onChange: () => void): () => void;
   reset?(): Promise<void>;
 }
+
+/* Kiểu cho src/lib/groupsApi.ts và exportReports.ts (bảng group_tasks trong supabase/group_management.sql — hiện chưa dùng trong app) */
+export interface GroupTask {
+  id: string;
+  group_id: string;
+  title: string;
+  description?: string | null;
+  assignee_id: string | null;
+  due_date: string;
+  estimated_hours: number;
+  status: 'todo' | 'doing' | 'done';
+  submitted_at?: string | null;
+  file_url?: string | null;
+  is_late?: boolean;
+}
+
+export interface MemberContributionSummary {
+  user_id: string;
+  email: string;
+  total_assigned: number;
+  total_completed: number;
+  on_time_count: number;
+  late_count: number;
+  total_hours_completed: number;
+}
