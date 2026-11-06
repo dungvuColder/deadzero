@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { AppData, Repo } from '../lib/types';
 import { createLocalRepo } from './localRepo';
 import { createSupabaseRepo, hasSupabase, supabase } from './supabaseRepo';
+import { Modal } from '../components/ui';
+import { SetPasswordForm } from '../components/password';
 
 interface Ctx {
   data: AppData;
@@ -22,6 +24,8 @@ export function StoreProvider({ children, login }: { children: ReactNode; login:
   const [data, setData] = useState<AppData | null>(null);
   const [needLogin, setNeedLogin] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  /** Vừa bấm link "Quên mật khẩu" trong email → hỏi mật khẩu mới */
+  const [recovery, setRecovery] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>();
 
   const useDemo = useCallback(() => {
@@ -37,7 +41,8 @@ export function StoreProvider({ children, login }: { children: ReactNode; login:
     supabase.auth.getSession().then(({ data: s }) => {
       if (s.session) setRepo(createSupabaseRepo(s.session.user.id)); else setNeedLogin(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((ev, session) => {
+      if (ev === 'PASSWORD_RECOVERY') setRecovery(true);
       if (session) { setNeedLogin(false); setRepo(r => (r?.mode === 'cloud' ? r : createSupabaseRepo(session.user.id))); }
     });
     return () => sub.subscription.unsubscribe();
@@ -75,6 +80,11 @@ export function StoreProvider({ children, login }: { children: ReactNode; login:
   return (
     <StoreCtx.Provider value={value}>
       {children}
+      {recovery && (
+        <Modal title="Đặt mật khẩu mới" onClose={() => setRecovery(false)}>
+          <SetPasswordForm onDone={m => { setRecovery(false); toast(m); }} />
+        </Modal>
+      )}
       {toastMsg && (
         <div role="status" className="fixed left-1/2 -translate-x-1/2 bottom-[calc(88px+env(safe-area-inset-bottom))] md:bottom-8 z-[60] bg-ink text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg max-w-[calc(100%-32px)]">
           {toastMsg}

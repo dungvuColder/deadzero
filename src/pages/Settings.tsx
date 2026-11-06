@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Download } from 'lucide-react';
 import { useStore } from '../data/store';
 import { downloadIcs } from '../lib/exporters';
+import { SetPasswordForm } from '../components/password';
 import { WD } from '../lib/date';
 import { Button, PageHeader } from '../components/ui';
 
@@ -68,6 +69,14 @@ export default function Settings() {
           {repo.mode === 'demo' && <span className="text-[13px] text-muted">Cần đăng nhập để nhận email.</span>}
         </div>
       </section>
+
+      {repo.mode === 'cloud' && (
+        <section className="flex flex-col gap-3 max-w-xl">
+          <h2 className="text-[15px] font-semibold">Mật khẩu</h2>
+          <p className="text-[13px] text-muted -mt-1">Đặt mật khẩu để lần sau đăng nhập ngay, không phải chờ email.</p>
+          <SetPasswordForm onDone={toast} />
+        </section>
+      )}
 
       <section className="flex flex-col gap-3 max-w-xl">
         <h2 className="text-[15px] font-semibold">Đồng bộ</h2>
