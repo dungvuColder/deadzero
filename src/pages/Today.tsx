@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Clock3, Flame, KeyRound, Plus, Upload } from 'lucide-react';
+import { AlertTriangle, BookOpen, Clock3, Flame, KeyRound, Plus, Upload } from 'lucide-react';
 import type { Task } from '../lib/types';
 import { useStore } from '../data/store';
 import { analyse, ranked, weekLoads } from '../lib/priority';
@@ -38,6 +38,12 @@ export default function Today() {
   const bestStreak = Math.max(0, ...data.goals.map(streak));
   const cd = top ? countdown(top.task.dueAt) : null;
   const isEmpty = !data.classes.length && !data.tasks.length;
+
+  // Cảnh báo quá tải: tuần vượt quỹ giờ, hoặc có việc không đủ giờ trước hạn
+  const overReasons = [
+    pct > 100 && `Đã xếp ${pct}% quỹ giờ tuần`,
+    plan.short.size > 0 && `${plan.short.size} việc không đủ giờ trước hạn`,
+  ].filter(Boolean).join(' · ');
 
   const toggleGoal = (gid: string, iid: string, done: boolean) => {
     const g = data.goals.find(x => x.id === gid)!;
@@ -86,6 +92,17 @@ export default function Today() {
         <section className="p-8 rounded-[20px] bg-soft text-sub">Không còn việc nào. Nghỉ ngơi thôi.</section>
       )}
 
+      {!isEmpty && overReasons && (
+        <Link to="/load" className="flex items-center gap-3 p-4 rounded-[14px] bg-urgent-soft">
+          <AlertTriangle size={20} className="shrink-0 text-urgent-ink" />
+          <span className="flex-1 min-w-0 text-sm">
+            <b className="block font-semibold text-urgent-ink">Tuần này đang quá tải</b>
+            <span className="block text-sub">{overReasons}</span>
+          </span>
+          <span className="text-[13px] font-medium text-urgent-ink whitespace-nowrap">Xem tải →</span>
+        </Link>
+      )}
+
       {!isEmpty && (
         <div className="flex flex-wrap gap-8 items-start">
           <section className="flex-[3_1_420px] min-w-0">
@@ -103,9 +120,6 @@ export default function Today() {
               ))}
               {!todayPlan.length && !extra.length && !goalItems.length && <p className="text-muted text-sm py-4">Hôm nay trống.</p>}
             </div>
-            {plan.short.size > 0 && (
-              <p className="mt-3 text-[13px] text-urgent-ink">{plan.short.size} việc không đủ giờ trước hạn. <Link to="/load" className="underline underline-offset-4">Xem tải công việc</Link></p>
-            )}
             <Link to="/calendar" className="inline-block mt-3 text-[13px] text-muted hover:text-ink">Kế hoạch cả tuần →</Link>
           </section>
 
