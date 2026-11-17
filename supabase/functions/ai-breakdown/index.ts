@@ -65,14 +65,21 @@ Mục tiêu: ${clip(body.goal, 500)}
 Trình độ hiện tại: ${clip(body.level, 300) || "không rõ"}`;
   }
 
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+  let r: Response;
+  try {
+  r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
     headers: { "Content-Type": "application/json", "x-goog-api-key": KEY },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { responseMimeType: "application/json", responseSchema: mode === "task" ? TASK_SCHEMA : GOAL_SCHEMA, temperature: 0.4 },
     }),
   });
+  } catch (e) {
+    console.error("gemini fetch failed", MODEL, String(e));
+    return json({ error: "AI phản hồi quá lâu, thử lại sau" }, 504);
+  }
   if (!r.ok) {
     const detail = await r.text();
     console.error("gemini error", r.status, detail.slice(0, 500));
